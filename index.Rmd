@@ -1,0 +1,158 @@
+---
+title: "360Giving dataviz"
+output: 
+  flexdashboard::flex_dashboard:
+    theme: readable
+    favicon: logo.png
+    orientation: rows
+    source_code: embed
+    social: ["twitter"]
+---
+<style>
+
+@import url('https://fonts.googleapis.com/css?family=Open+Sans|Roboto');
+
+@font-face {
+    font-family: 'Roboto', sans-serif;
+}
+
+div {
+    font-family: 'Roboto', sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6, .header
+{
+    font-family: 'Roboto', sans-serif;
+    color:#757575;
+}
+
+a
+{
+    color: #fc6721;
+    text-decoration: none;
+}
+
+a:hover
+{
+    text-decoration: underline;
+}
+
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+library(flexdashboard)
+library(crosstalk)
+library(plotly)
+library(leaflet)
+library(DT)
+library(tidyverse)
+```
+
+```{r data}
+df <- read_csv("data/threesixtygiving_data.csv") %>% 
+  mutate(date = as.Date(date, format = "%Y-%m-%d")) %>% 
+  filter(date >= "2010-01-01" & date <= "2017-12-31" &
+           !is.na(lat)) %>% 
+  select(theme, date, funder, grant_amount, recipient, title, url, lat, long)
+
+sd <- SharedData$new(df)
+```
+
+Filters {.sidebar}
+=====================================
+
+```{r filters}
+filter_select(id = "theme", 
+              label = "Choose a theme",
+              sharedData = sd, 
+              group = ~theme, 
+              multiple = FALSE)
+
+filter_select(id = "funder", 
+              label = "Choose a funder",
+              sharedData = sd, 
+              group = ~funder, 
+              multiple = FALSE)
+```
+
+Widgets
+=======================================================================
+
+Row
+-------------------------------------
+
+### Grants awarded over time 
+
+```{r plot}
+plot_ly(data = sd, x = ~date, y = ~grant_amount, hoverinfo = "text",
+        text = ~paste0('</br> Recipient: ', recipient,
+                      '</br> Grant: £', prettyNum(grant_amount, big.mark = ",", scientific = FALSE))) %>%
+  add_markers(color = "#fc6721", alpha = 0.8) %>%
+  highlight("plotly_selected") %>%
+  layout(title = FALSE,
+         xaxis = list(title = ""),
+         yaxis = list(title = "Grant awarded (£)")) %>%
+  config(displayModeBar = F)
+```
+
+### Map of recipient locations
+
+```{r map}
+leaflet(sd) %>%
+  addProviderTiles("CartoDB") %>%
+  setView(-2.520793, 53.945279, zoom = 5) %>%
+  addCircleMarkers(lng = ~long, lat = ~lat,
+                   stroke = TRUE, color = "#fc6721", weight = 2, 
+                   fillColor = "white", fillOpacity = 0.5, radius = 4,
+             popup = if_else(is.na(df$url), df$recipient, paste0("<a href='", df$url, "' target='_blank' style='color: #fc6721'>", df$recipient, "</a>")))
+```
+
+Row
+-------------------------------------
+
+### List of grants awarded
+
+```{r table}
+datatable(sd, extensions= c('Buttons', "Scroller"), 
+          class = "compact", rownames = FALSE,  
+           colnames = c("Theme", "Date", "Funder", "Amount", "Recipient", "Title", "Link", "Lat", "Long"),
+            options=list(
+              dom = 'Blfrtip',
+              deferRender = TRUE, 
+              scrollY = 300,
+              scroller = TRUE, 
+              columnDefs = list(list(className = 'dt-left', targets = 0:8)), 
+              buttons = list('copy', 'csv', 'pdf'))) %>% 
+  formatCurrency('grant_amount', currency = "£", digits = 0)
+```
+
+About
+=======================================================================
+
+This app allows you to interrogate grants relating to homelessness, cycling and mental health between 2010 and 2017. You can either filter the results by funder or interact with the widgets:
+
+* **Scatter plot** - click and drag points to subset points on the map and and rows in the table. Double-click to restore all the points.    
+* **Map** - select multiple points with the resizable selection tool. Click points to reveal recipients' webpages (where available).   
+* **Table** - click and select multiple rows to highlight individual points on the scatter plot and map.   
+
+Note that you can restore all the data by refreshing the web page.
+
+***
+
+</br>
+
+##### Credits
+The app was built in [R](https://cran.r-project.org/) using the following packages: 
+
+* [flexdashboard](https://cran.r-project.org/web/packages/flexdashboard/index.html) 
+* [crosstalk](https://cran.r-project.org/web/packages/crosstalk/index.html)
+* [plotly](https://cran.r-project.org/web/packages/plotly/index.html) 
+* [leaflet](https://cran.r-project.org/web/packages/leaflet/index.html)
+* [DT](https://cran.r-project.org/web/packages/DT/index.html)
+* [tidyverse](https://cran.r-project.org/web/packages/tidyverse/index.html)
+
+The grant data derive from [360Giving](https://www.threesixtygiving.org/). The data pre-processing R script is available from [here](https://www.trafforddatalab.io/360Giving-dataviz.html) and can be adapted to visualise different themes.
+
+This app was created by the [Trafford Data Lab](https://www.trafforddatalab.io/) and is licensed under a [Creative Commons Attribution-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-sa/4.0/).
