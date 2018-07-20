@@ -153,6 +153,6 @@ The app was built in [R](https://cran.r-project.org/) using the following packag
 * [DT](https://cran.r-project.org/web/packages/DT/index.html)
 * [tidyverse](https://cran.r-project.org/web/packages/tidyverse/index.html)
 
-The grant data derive from [360Giving](https://www.threesixtygiving.org/). The data pre-processing R script is available from [here](https://www.trafforddatalab.io/360Giving-dataviz.html) and can be adapted to visualise different themes.
+The grant data derive from [360Giving](https://www.threesixtygiving.org/). The data pre-processing R script is available from [here](https://www.traffordDataLab.io/360Giving-dataviz/pre-processing.R) and can be adapted to visualise different themes.
 
 This app was created by the [Trafford Data Lab](https://www.trafforddatalab.io/) and is licensed under a [Creative Commons Attribution-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-sa/4.0/).
